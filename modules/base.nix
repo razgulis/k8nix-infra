@@ -71,6 +71,7 @@
             ci = "commit";
             st = "status";
             br = "branch";
+            k = "kubectl";
           };
         };
       };

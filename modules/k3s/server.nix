@@ -33,5 +33,7 @@ in
   environment.systemPackages = with pkgs; [
     kubectl
   ];
-}
 
+  # Make `kubectl` work out-of-the-box on the master.
+  environment.sessionVariables.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
+}

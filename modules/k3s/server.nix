@@ -27,6 +27,8 @@ in
   # Replace this with sops-nix or agenix ASAP.
   systemd.tmpfiles.rules = [
     "f /etc/k3s/token 0600 root root - CHANGEME_SUPER_SECRET_TOKEN"
+    "d /home/admin/.kube 0700 admin users - -"
+    "L+ /home/admin/.kube/config - - - - /etc/rancher/k3s/k3s.yaml"
   ];
 
   # Helpful to manage from the master

@@ -71,7 +71,6 @@
             ci = "commit";
             st = "status";
             br = "branch";
-            k = "kubectl";
           };
         };
       };
@@ -120,6 +119,7 @@
   # Shell Aliases
   programs.bash.shellAliases = {
     la = "ls -alh";
+    k = "kubectl";
   };
 
   system.stateVersion = "24.11";

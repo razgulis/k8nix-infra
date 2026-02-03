@@ -20,5 +20,5 @@ let
 in
 {
   "k3s-token.age".publicKeys = k3sNodes;
+  "kubeconfig-ro.age".publicKeys = k3sNodes;
 }
-

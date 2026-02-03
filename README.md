@@ -49,6 +49,14 @@ sync
 
 Note: flash to the whole device (e.g. `/dev/sda`), not a partition (e.g. `/dev/sda1`).
 
+## Continued Development
+- ssh into the instance, then make sure this repository is cloned:
+  `mkdir repositories; cd repositories; git clone https://github.com/razgulis/k8nix.git`
+- if the repo is already checked out:
+  `git pull`
+- rebuild the flake you are currently on:
+  `sudo nixos-rebuild switch --flake .#pi-worker-X`
+
 ## SSH access
 - Default user is `admin` (key-based auth; password login is disabled). Update the SSH key and Home Manager defaults in `modules/base.nix`.
 
@@ -63,6 +71,55 @@ Note: flash to the whole device (e.g. `/dev/sda`), not a partition (e.g. `/dev/s
 - The k3s token is read from `/etc/k3s/token`.
 - A placeholder token is created by tmpfiles rules in the k3s modules.
 - For real usage, replace the placeholder with agenix (or another secret manager).
+
+## Worker kubeconfig (read-only)
+Workers can optionally have a read-only kubeconfig at `/home/admin/.kube/config` (encrypted via agenix as `secrets/kubeconfig-ro.age`).
+
+High level:
+1) Create a service account on the master with the `view` ClusterRole.
+2) Generate a token and write a kubeconfig pointing at `https://pi-master-1:6443`.
+3) Encrypt that kubeconfig into `secrets/kubeconfig-ro.age` and rebuild the workers.
+
+Example (run on `pi-master-1`):
+
+```bash
+sudo k3s kubectl -n kube-system create serviceaccount readonly-kubeconfig
+sudo k3s kubectl create clusterrolebinding readonly-kubeconfig \
+  --clusterrole=view \
+  --serviceaccount=kube-system:readonly-kubeconfig
+
+TOKEN="$(sudo k3s kubectl -n kube-system create token readonly-kubeconfig --duration=8760h)"
+CA_B64="$(sudo base64 -w0 /var/lib/rancher/k3s/server/tls/server-ca.crt)"
+
+cat > /tmp/kubeconfig-ro.yaml <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+- name: default
+  cluster:
+    certificate-authority-data: ${CA_B64}
+    server: https://pi-master-1:6443
+users:
+- name: readonly
+  user:
+    token: ${TOKEN}
+contexts:
+- name: default
+  context:
+    cluster: default
+    user: readonly
+current-context: default
+EOF
+```
+
+Then (on your dev machine in this repo):
+
+```bash
+nix develop
+agenix -e secrets/kubeconfig-ro.age
+```
+
+Paste the contents of `/tmp/kubeconfig-ro.yaml`, save, then rebuild worker nodes/images.
 
 ## Development shell
 This flake exposes a dev shell with agenix:

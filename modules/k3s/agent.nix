@@ -22,9 +22,10 @@ in
     # Must match the master's token
     tokenFile = "/etc/k3s/token";
 
-    extraFlags = lib.concatStringsSep " " [
-      "--flannel-backend=vxlan"
-    ];
+    # Note: `--flannel-backend` is not a valid flag for `k3s agent` (it is a
+    # server-side setting). Leaving this empty avoids the agent crashing in a
+    # restart loop.
+    extraFlags = "";
   };
 
   systemd.tmpfiles.rules = [

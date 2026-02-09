@@ -76,18 +76,15 @@ Note: flash to the whole device (e.g. `/dev/sda`), not a partition (e.g. `/dev/s
 Workers can optionally have a read-only kubeconfig at `/home/admin/.kube/config` (encrypted via agenix as `secrets/kubeconfig-ro.age`).
 
 High level:
-1) Create a service account on the master with the `view` ClusterRole.
+1) Ensure the master has the read-only RBAC manifest applied (after rebuilding `pi-master-1`).
 2) Generate a token and write a kubeconfig pointing at `https://pi-master-1:6443`.
 3) Encrypt that kubeconfig into `secrets/kubeconfig-ro.age` and rebuild the workers.
+
+After the master rebuild, the RBAC is applied automatically from `/var/lib/rancher/k3s/server/manifests/readonly-kubeconfig-rbac.yaml`.
 
 Example (run on `pi-master-1`):
 
 ```bash
-sudo k3s kubectl -n kube-system create serviceaccount readonly-kubeconfig
-sudo k3s kubectl create clusterrolebinding readonly-kubeconfig \
-  --clusterrole=view \
-  --serviceaccount=kube-system:readonly-kubeconfig
-
 TOKEN="$(sudo k3s kubectl -n kube-system create token readonly-kubeconfig --duration=8760h)"
 CA_B64="$(sudo base64 -w0 /var/lib/rancher/k3s/server/tls/server-ca.crt)"
 
@@ -117,10 +114,15 @@ Then (on your dev machine in this repo):
 ```bash
 nix develop
 cd secrets
-agenix -e kubeconfig-ro.age
+RULES=./secrets.nix EDITOR=vim agenix -e kubeconfig-ro.age -i ~/.ssh/nix-pi-cluster
 ```
 
 Paste the contents of `/tmp/kubeconfig-ro.yaml`, save, then rebuild worker nodes/images.
+
+Notes:
+- The `laptop` key in `secrets/secrets.nix` must match the public key of the private key you use with `-i`.
+- Replace `~/.ssh/nix-pi-cluster` with the private key you actually use on your dev machine.
+- If you get `Forbidden: nodes is forbidden`, the RBAC manifest wasn’t applied on the master; rebuild `pi-master-1`.
 
 ## Development shell
 This flake exposes a dev shell with agenix:

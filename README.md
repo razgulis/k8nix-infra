@@ -130,6 +130,62 @@ sudo k3s kubectl auth can-i list nodes \
   --as system:serviceaccount:kube-system:readonly-kubeconfig
 ```
 
+## Add a worker node (example: `pi-worker-2`)
+1) Update IPs (if needed) in `modules/networking.nix` and ensure the node name exists in `nodes`.
+2) Build and flash the worker image:
+
+```bash
+nix build .#nixosConfigurations.pi-worker-2.config.system.build.sdImage
+sudo dd if=./result/sd-image/nixos-pi-worker-2.img of=/dev/sdX bs=4M status=progress conv=fsync
+sync
+```
+
+3) Boot the Pi and SSH in:
+
+```bash
+ssh admin@pi-worker-2
+```
+
+4) On the new worker, print its host key:
+
+```bash
+sudo cat /etc/ssh/ssh_host_ed25519_key.pub
+```
+
+5) On your dev machine, add that key to `secrets/secrets.nix` under `hosts = { ... }` and include it in `k3sNodes`.
+6) Re-key `kubeconfig-ro.age` so the new worker can decrypt it:
+
+```bash
+cd secrets
+RULES=./secrets.nix agenix -r -i ~/.ssh/nix-pi-cluster
+```
+
+7) Commit and push the updated secrets:
+
+```bash
+git add secrets/secrets.nix secrets/kubeconfig-ro.age
+git commit -m "Add pi-worker-2 host key"
+git push
+```
+
+8) On the worker, pull and rebuild:
+
+```bash
+cd ~/repositories/k8nix
+git pull
+sudo nixos-rebuild switch --flake .#pi-worker-2
+```
+
+9) Verify the node joins from the master:
+
+```bash
+sudo k3s kubectl get nodes -o wide
+```
+
+Notes:
+- The worker joins using `/etc/k3s/token`; ensure it matches the master.
+- If the worker doesn’t join, check logs on the worker: `sudo journalctl -u k3s -b --no-pager | tail -200`.
+
 ## Development shell
 This flake exposes a dev shell with agenix:
 

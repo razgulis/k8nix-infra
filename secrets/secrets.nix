@@ -6,7 +6,7 @@ let
   hosts = {
     "pi-master-1" = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMy5MgoFs0BgZAwJWbUlOpkFrzlvZAzVOZMl8gan5JJh root@pi-master-1";
     "pi-worker-1" = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM6ujLebyeMT2iipj/PysxQrR5uxCrLwLptsW5fkX491 root@pi-worker-1";
-#    "pi-worker-2" = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... w2 ...";
+    "pi-worker-2" = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDdp/ByOrM644lD1gxncjAFczEkR5KE150bdT+okq/si root@pi-worker-2";
 #    "pi-worker-3" = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... w3 ...";
   };
 
@@ -14,7 +14,7 @@ let
     laptop
     hosts."pi-master-1"
     hosts."pi-worker-1"
-#    hosts."pi-worker-2"
+    hosts."pi-worker-2"
 #    hosts."pi-worker-3"
   ];
 in

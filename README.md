@@ -49,7 +49,7 @@ sync
 
 Note: flash to the whole device (e.g. `/dev/sda`), not a partition (e.g. `/dev/sda1`).
 
-## Continued Development
+## Continued Development (updating without reflashing)
 - ssh into the instance, then make sure this repository is cloned:
   `mkdir repositories; cd repositories; git clone https://github.com/razgulis/k8nix.git`
 - if the repo is already checked out:
@@ -116,7 +116,8 @@ Then (on your dev machine in this repo):
 
 ```bash
 nix develop
-agenix -e secrets/kubeconfig-ro.age
+cd secrets
+agenix -e kubeconfig-ro.age
 ```
 
 Paste the contents of `/tmp/kubeconfig-ro.yaml`, save, then rebuild worker nodes/images.

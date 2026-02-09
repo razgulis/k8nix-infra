@@ -124,6 +124,12 @@ Notes:
 - Replace `~/.ssh/nix-pi-cluster` with the private key you actually use on your dev machine.
 - If you get `Forbidden: nodes is forbidden`, the RBAC manifest wasn’t applied on the master; rebuild `pi-master-1`.
 
+Troubleshooting (run on `pi-master-1`):
+```bash
+sudo k3s kubectl auth can-i list nodes \
+  --as system:serviceaccount:kube-system:readonly-kubeconfig
+```
+
 ## Development shell
 This flake exposes a dev shell with agenix:
 

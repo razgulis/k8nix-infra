@@ -35,12 +35,6 @@
     requires = [ "zfs-import-r630-main.service" "zfs-import-r630-bulk.service" ];
   };
 
-  # Optional local user kept from your current machine config.
-  users.users.sergei = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-  };
-
   # Useful scheduling labels for storage/heavy workloads.
   services.k3s.extraFlags = (config.services.k3s.extraFlags or "")
     + " --node-label=node-role.kubernetes.io/storage=true"

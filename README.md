@@ -1,9 +1,9 @@
 # k8nix
 
-NixOS flake for a multi-node Raspberry Pi 4 k3s cluster.
+NixOS flake for a mixed-architecture k3s cluster (Raspberry Pi + x86_64 storage worker).
 
 ## What this repo includes
-- Flake outputs for one master and four workers, all aarch64.
+- Flake outputs for one master + four Pi workers (aarch64) + one x86_64 storage worker.
 - Shared base config (SSH, users, kernel params, tools).
 - Network defaults (static LAN IPs, /etc/hosts, firewall).
 - SD card image build for headless boot.
@@ -22,6 +22,8 @@ NixOS flake for a multi-node Raspberry Pi 4 k3s cluster.
 - `modules/sd-image.nix`: SD image builder.
 - `modules/k3s/server.nix`: k3s server config.
 - `modules/k3s/agent.nix`: k3s agent config.
+- `modules/k3s/openebs-zfs.nix`: OpenEBS install + ZFS StorageClasses.
+- `hosts/r630-storage/disko.nix`: declarative disk/pool layout for the R630.
 - `hosts/*/default.nix`: per-node overrides.
 - `secrets/secrets.nix`: agenix recipients and example secret mapping.
 
@@ -185,6 +187,39 @@ sudo k3s kubectl get nodes -o wide
 Notes:
 - The worker joins using `/etc/k3s/token`; ensure it matches the master.
 - If the worker doesn’t join, check logs on the worker: `sudo journalctl -u k3s -b --no-pager | tail -200`.
+
+## `r630-storage` (x86_64 storage + heavy workloads)
+- Host config is under `hosts/r630-storage/`.
+- Disk geometry is declarative in `hosts/r630-storage/disko.nix`.
+- It runs as a k3s agent with ZFS enabled and imports pools `r630-main` and `r630-bulk`.
+- `pi-master-1` applies OpenEBS and the following StorageClasses:
+  - `zfs-reliable` -> `poolname: r630-main`
+  - `zfs-bulk` -> `poolname: r630-bulk`
+- Build/evaluate this host with:
+
+```bash
+nix build .#nixosConfigurations.r630-storage.config.system.build.toplevel
+```
+
+### Bare-metal rebuild (`r630-storage`)
+Use this when you want to wipe/recreate the machine from scratch with this repo as source of truth.
+
+1) Boot into NixOS installer media on the R630.
+2) Clone this repo in the live environment.
+3) Set the `osDisk` by-id path in `hosts/r630-storage/disko.nix` to the dedicated OS drive.
+4) Partition/create pools from the declarative layout:
+
+```bash
+sudo nix run github:nix-community/disko -- --mode disko --flake .#r630-storage
+```
+
+5) Install NixOS:
+
+```bash
+sudo nixos-install --flake .#r630-storage
+```
+
+Warning: this is destructive and will wipe data on the configured disks/pools.
 
 ## Development shell
 This flake exposes a dev shell with agenix:

@@ -1,9 +1,10 @@
 {
-  description = "NixOS multi-node Raspberry Pi k3s cluster";
+  description = "NixOS mixed-architecture k3s cluster";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:NixOS/nixos-hardware";
+    disko.url = "github:nix-community/disko";
 
     agenix.url = "github:ryantm/agenix";
     home-manager = {
@@ -12,41 +13,53 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixos-hardware, agenix, home-manager }:
+  outputs = { self, nixpkgs, nixos-hardware, disko, agenix, home-manager }:
     let
-      # Target platform for the Raspberry Pi images.
-      targetSystem = "aarch64-linux";
+      # Default platform for Raspberry Pi nodes.
+      piSystem = "aarch64-linux";
 
       # Shell tooling should be available on common dev hosts too.
       devSystems = [ "x86_64-linux" "aarch64-linux" ];
       forAllSystems = f: nixpkgs.lib.genAttrs devSystems (system: f system);
 
-      mkHost = { hostName, roleModule }:
+      commonModules = [
+        agenix.nixosModules.default
+        home-manager.nixosModules.home-manager
+        ./modules/base.nix
+        ./modules/networking.nix
+      ];
+
+      piModules = [
+        nixos-hardware.nixosModules.raspberry-pi-4
+        ./modules/sd-image.nix
+      ];
+
+      r630Modules = [
+        disko.nixosModules.disko
+      ];
+
+      mkHost = { hostName, roleModule, system ? piSystem, extraModules ? [ ] }:
         nixpkgs.lib.nixosSystem {
-          system = targetSystem;
+          inherit system;
           specialArgs = { inherit hostName; };
 
-          modules = [
-            nixos-hardware.nixosModules.raspberry-pi-4
-            agenix.nixosModules.default
-            home-manager.nixosModules.home-manager
-
-            ./modules/base.nix
-            ./modules/networking.nix
-            ./modules/sd-image.nix
-
-            roleModule
-            (./hosts + "/${hostName}/default.nix")
-          ];
+          modules =
+            commonModules
+            ++ extraModules
+            ++ [
+              roleModule
+              (./hosts + "/${hostName}/default.nix")
+            ];
         };
     in
     {
       nixosConfigurations = {
-        pi-master-1     = mkHost { hostName = "pi-master-1";     roleModule = ./modules/k3s/server.nix; };
-        pi-worker-1     = mkHost { hostName = "pi-worker-1";     roleModule = ./modules/k3s/agent.nix; };
-        pi-worker-2     = mkHost { hostName = "pi-worker-2";     roleModule = ./modules/k3s/agent.nix; };
-        pi-worker-3     = mkHost { hostName = "pi-worker-3";     roleModule = ./modules/k3s/agent.nix; };
-        pi-worker-4-hdd = mkHost { hostName = "pi-worker-4-hdd"; roleModule = ./modules/k3s/agent.nix; };
+        pi-master-1     = mkHost { hostName = "pi-master-1";     roleModule = ./modules/k3s/server.nix; extraModules = piModules; };
+        pi-worker-1     = mkHost { hostName = "pi-worker-1";     roleModule = ./modules/k3s/agent.nix;  extraModules = piModules; };
+        pi-worker-2     = mkHost { hostName = "pi-worker-2";     roleModule = ./modules/k3s/agent.nix;  extraModules = piModules; };
+        pi-worker-3     = mkHost { hostName = "pi-worker-3";     roleModule = ./modules/k3s/agent.nix;  extraModules = piModules; };
+        pi-worker-4-hdd = mkHost { hostName = "pi-worker-4-hdd"; roleModule = ./modules/k3s/agent.nix;  extraModules = piModules; };
+        r630-storage    = mkHost { hostName = "r630-storage";    roleModule = ./modules/k3s/agent.nix;  system = "x86_64-linux"; extraModules = r630Modules; };
       };
 
       devShells = forAllSystems (system: {

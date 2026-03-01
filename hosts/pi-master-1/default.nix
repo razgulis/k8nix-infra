@@ -2,6 +2,7 @@
 {
   imports = [
     ../../modules/blocky.nix
+    ../../modules/k3s/openebs-zfs.nix
   ];
 
   networking.nameservers = [ "127.0.0.1" ];

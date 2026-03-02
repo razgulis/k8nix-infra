@@ -36,7 +36,8 @@
   };
 
   # Useful scheduling labels for storage/heavy workloads.
-  services.k3s.extraFlags = (config.services.k3s.extraFlags or "")
-    + " --node-label=node-role.kubernetes.io/storage=true"
-    + " --node-label=workload=heavy";
+  services.k3s.extraFlags = lib.concatStringsSep " " [
+    "--node-label=node-role.kubernetes.io/storage=true"
+    "--node-label=workload=heavy"
+  ];
 }

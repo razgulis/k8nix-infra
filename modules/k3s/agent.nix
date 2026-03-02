@@ -23,9 +23,8 @@ in
     tokenFile = "/etc/k3s/token";
 
     # Note: `--flannel-backend` is not a valid flag for `k3s agent` (it is a
-    # server-side setting). Leaving this empty avoids the agent crashing in a
-    # restart loop.
-    extraFlags = "";
+    # server-side setting). Default to empty so hosts can override cleanly.
+    extraFlags = lib.mkDefault "";
   };
 
   systemd.tmpfiles.rules = [

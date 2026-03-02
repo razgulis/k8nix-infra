@@ -3,12 +3,12 @@
 let
   # Update these IPs to match your LAN plan (DHCP reservations recommended).
   nodes = {
-    "pi-master-1"     = "192.168.1.200";
-    "pi-worker-1"     = "192.168.1.201";
-    "pi-worker-2"     = "192.168.1.202";
-    "pi-worker-3"     = "192.168.1.203";
-    "pi-worker-4-hdd" = "192.168.1.204";
-    "r630-storage"    = "192.168.1.205";
+    "pi-master-1"  = "192.168.1.200";
+    "pi-worker-1"  = "192.168.1.201";
+    "pi-worker-2"  = "192.168.1.202";
+    "pi-worker-3"  = "192.168.1.203";
+    "pi-worker-4"  = "192.168.1.204";
+    "r630-storage" = "192.168.1.205";
   };
 
   # Prefer the master name; it will be in /etc/hosts via extraHosts.

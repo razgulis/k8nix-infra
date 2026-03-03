@@ -37,10 +37,12 @@
   ];
   # Keep the node reachable if one of the ZFS data pools is unavailable.
   fileSystems."/var/lib/zfs-pv/reliable".options = lib.mkAfter [
+    "noauto"
     "nofail"
     "x-systemd.device-timeout=10s"
   ];
   fileSystems."/var/lib/zfs-pv/bulk".options = lib.mkAfter [
+    "noauto"
     "nofail"
     "x-systemd.device-timeout=10s"
   ];

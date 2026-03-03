@@ -29,6 +29,21 @@
   systemd.network.networks."10-lan".matchConfig = lib.mkForce {
     PermanentMACAddress = "b0:83:fe:e1:68:6a";
   };
+  # This host may not use disko's by-partlabel ESP path yet; don't drop into
+  # emergency mode just because /boot is temporarily unavailable.
+  fileSystems."/boot".options = lib.mkAfter [
+    "nofail"
+    "x-systemd.device-timeout=10s"
+  ];
+  # Keep the node reachable if one of the ZFS data pools is unavailable.
+  fileSystems."/var/lib/zfs-pv/reliable".options = lib.mkAfter [
+    "nofail"
+    "x-systemd.device-timeout=10s"
+  ];
+  fileSystems."/var/lib/zfs-pv/bulk".options = lib.mkAfter [
+    "nofail"
+    "x-systemd.device-timeout=10s"
+  ];
   boot.zfs.extraPools = [ "r630-main" "r630-bulk" ];
   services.zfs.autoScrub.enable = true;
   services.zfs.trim.enable = true;

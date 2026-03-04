@@ -1,17 +1,19 @@
 { config, lib, pkgs, ... }:
 
 let
-  masterName = "pi-master-1";
+  hasK3sTokenSecret = builtins.pathExists ../../secrets/k3s-token.age;
 in
 {
+  warnings =
+    lib.optional (!hasK3sTokenSecret)
+      "k8nix: secrets/k3s-token.age not found; using placeholder /etc/k3s/token.";
+
   services.k3s = {
     enable = true;
     role = "server";
     clusterInit = true;
 
-    # For real usage, put this in a secret manager (sops-nix/agenix).
-    # For initial bootstrap only, you can create this file manually.
-    tokenFile = "/etc/k3s/token";
+    tokenFile = if hasK3sTokenSecret then "/run/agenix/k3s-token" else "/etc/k3s/token";
 
     # Optional opinionated defaults
     extraFlags = lib.concatStringsSep " " [
@@ -23,15 +25,24 @@ in
     ];
   };
 
-  # Create a placeholder token file if it doesn't exist yet (bootstrap convenience).
-  # Replace this with sops-nix or agenix ASAP.
-  systemd.tmpfiles.rules = [
+  # Keep bootstrap convenience when no encrypted token exists.
+  systemd.tmpfiles.rules = (lib.optionals (!hasK3sTokenSecret) [
     "f /etc/k3s/token 0600 root root - CHANGEME_SUPER_SECRET_TOKEN"
+  ]) ++ [
     "d /var/lib/rancher/k3s/server/manifests 0755 root root - -"
     "L+ /var/lib/rancher/k3s/server/manifests/readonly-kubeconfig-rbac.yaml - - - - /etc/k3s/readonly-kubeconfig-rbac.yaml"
     "d /home/admin/.kube 0700 admin users - -"
     "L+ /home/admin/.kube/config - - - - /etc/rancher/k3s/k3s.yaml"
   ];
+
+  age.secrets = lib.mkIf hasK3sTokenSecret {
+    k3s-token = {
+      file = ../../secrets/k3s-token.age;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+  };
 
   # Helpful to manage from the master
   environment.systemPackages = with pkgs; [

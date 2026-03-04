@@ -38,7 +38,7 @@ in
   ];
 
   age.secrets =
-    (lib.mkIf hasReadOnlyKubeconfigSecret {
+    (lib.optionalAttrs hasReadOnlyKubeconfigSecret {
       kubeconfig-ro = {
         file = ../../secrets/kubeconfig-ro.age;
         owner = "admin";
@@ -46,7 +46,7 @@ in
         mode = "0400";
       };
     })
-    // (lib.mkIf hasK3sTokenSecret {
+    // (lib.optionalAttrs hasK3sTokenSecret {
       k3s-token = {
         file = ../../secrets/k3s-token.age;
         owner = "root";

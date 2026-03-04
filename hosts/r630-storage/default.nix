@@ -35,10 +35,20 @@
     "nofail"
     "x-systemd.device-timeout=10s"
   ];
-  # These datasets are mounted by ZFS itself using dataset mountpoints.
-  # Avoid fstab/systemd mount unit churn when pools are absent or delayed.
-  fileSystems."/var/lib/zfs-pv/reliable".enable = lib.mkForce false;
-  fileSystems."/var/lib/zfs-pv/bulk".enable = lib.mkForce false;
+  # Keep mount units present for switch logic, but make dataset availability
+  # non-fatal and mount lazily.
+  fileSystems."/var/lib/zfs-pv/reliable".options = lib.mkAfter [
+    "x-systemd.automount"
+    "nofail"
+    "x-systemd.device-timeout=10s"
+    "x-systemd.mount-timeout=10s"
+  ];
+  fileSystems."/var/lib/zfs-pv/bulk".options = lib.mkAfter [
+    "x-systemd.automount"
+    "nofail"
+    "x-systemd.device-timeout=10s"
+    "x-systemd.mount-timeout=10s"
+  ];
   boot.zfs.extraPools = [ "r630-main" "r630-bulk" ];
   services.zfs.autoScrub.enable = true;
   services.zfs.trim.enable = true;

@@ -22,6 +22,7 @@ NixOS flake for a mixed-architecture k3s cluster (Raspberry Pi + x86_64 storage 
 - `modules/sd-image.nix`: SD image builder.
 - `modules/k3s/server.nix`: k3s server config.
 - `modules/k3s/agent.nix`: k3s agent config.
+- `modules/k3s/argocd.nix`: Argo CD install + bootstrap app-of-apps.
 - `modules/k3s/openebs-zfs.nix`: OpenEBS install + ZFS StorageClasses.
 - `hosts/r630-storage/disko.nix`: declarative disk/pool layout for the R630.
 - `hosts/*/default.nix`: per-node overrides.
@@ -73,6 +74,30 @@ Note: flash to the whole device (e.g. `/dev/sda`), not a partition (e.g. `/dev/s
 - The k3s token is read from `/etc/k3s/token`.
 - A placeholder token is created by tmpfiles rules in the k3s modules.
 - For real usage, replace the placeholder with agenix (or another secret manager).
+
+## Argo CD bootstrap (pi-master-1)
+- `pi-master-1` imports `modules/k3s/argocd.nix`, which:
+  - installs Argo CD in-cluster via k3s `HelmChart`
+  - recursively scans the `argocd/` path in `k8nix-apps` for Application manifests
+  - creates an AppProject that allows both:
+    - `https://github.com/razgulis/k8nix-apps*`
+    - `https://gitlab.gitlab.svc.cluster.local/*/*` (future in-cluster GitLab repos)
+  - bootstraps the root app (`k8nix-apps`) from:
+    - repo: `https://github.com/razgulis/k8nix-apps`
+    - revision: `master`
+    - path: `argocd`
+- The root app can define child applications, including ones pointing to the in-cluster GitLab repo, which avoids circular dependencies in this infra repo.
+- To access Argo CD UI without exposing it publicly:
+
+```bash
+sudo k3s kubectl -n argocd port-forward svc/argocd-server 8080:80
+```
+
+- Verify bootstrap objects:
+
+```bash
+sudo k3s kubectl -n argocd get appprojects,applications
+```
 
 ## Worker kubeconfig (read-only)
 Workers can optionally have a read-only kubeconfig at `/home/admin/.kube/config` (encrypted via agenix as `secrets/kubeconfig-ro.age`).

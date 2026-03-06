@@ -2,8 +2,22 @@
 {
   imports = [
     ../../modules/blocky.nix
+    ../../modules/k3s/argocd.nix
     ../../modules/k3s/openebs-zfs.nix
   ];
+
+  k8nix.argocd = {
+    enable = true;
+    bootstrapApp = {
+      repoURL = "https://github.com/razgulis/k8nix-apps";
+      targetRevision = "master";
+      path = "argocd";
+    };
+    allowedSourceRepos = [
+      "https://github.com/razgulis/k8nix-apps*"
+      "https://gitlab.gitlab.svc.cluster.local/*/*"
+    ];
+  };
 
   networking.nameservers = [ "127.0.0.1" ];
 

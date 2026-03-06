@@ -226,6 +226,56 @@ Notes:
 nix build .#nixosConfigurations.r630-storage.config.system.build.toplevel
 ```
 
+### Ensure ZFS PV datasets exist (day-2 on existing installs)
+On already-installed machines, `nixos-rebuild switch` will not create missing
+ZFS datasets from `disko.nix`. Run the following once on `r630-storage`:
+
+```bash
+if ! sudo zfs list -H -o name r630-main/k3s/pv >/dev/null 2>&1; then
+  sudo zfs create -p \
+    -o mountpoint=/var/lib/zfs-pv/reliable \
+    -o canmount=on \
+    -o recordsize=16K \
+    r630-main/k3s/pv
+fi
+
+if ! sudo zfs list -H -o name r630-bulk/k3s/pv >/dev/null 2>&1; then
+  sudo zfs create -p \
+    -o mountpoint=/var/lib/zfs-pv/bulk \
+    -o canmount=on \
+    -o recordsize=1M \
+    r630-bulk/k3s/pv
+fi
+
+if [ "$(sudo zfs get -H -o value mounted r630-main/k3s/pv)" != "yes" ]; then
+  sudo zfs mount r630-main/k3s/pv
+fi
+
+if [ "$(sudo zfs get -H -o value mounted r630-bulk/k3s/pv)" != "yes" ]; then
+  sudo zfs mount r630-bulk/k3s/pv
+fi
+
+sudo systemctl reset-failed var-lib-zfs\\x2dpv-reliable.mount var-lib-zfs\\x2dpv-bulk.mount
+sudo systemctl start var-lib-zfs\\x2dpv-reliable.mount var-lib-zfs\\x2dpv-bulk.mount
+sudo mkdir -p /var/lib/zfs-pv/reliable/gitlab
+```
+
+Verify:
+
+```bash
+sudo zfs list r630-main/k3s/pv r630-bulk/k3s/pv
+findmnt /var/lib/zfs-pv/reliable /var/lib/zfs-pv/bulk
+```
+
+The host config also includes an idempotent service
+(`k8nix-zfs-pv-datasets.service`) that ensures these datasets/mounts on rebuild.
+After pulling this repo update on `r630-storage`, run:
+
+```bash
+sudo nixos-rebuild switch --flake .#r630-storage
+sudo systemctl start k8nix-zfs-pv-datasets.service
+```
+
 ### Bare-metal rebuild (`r630-storage`)
 Use this when you want to wipe/recreate the machine from scratch with this repo as source of truth.
 

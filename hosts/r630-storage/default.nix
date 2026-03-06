@@ -53,10 +53,64 @@
   services.zfs.autoScrub.enable = true;
   services.zfs.trim.enable = true;
 
-  # Ensure the agent starts after storage pools are imported.
-  systemd.services.k3s = {
+  # Day-2 safety: ensure expected ZFS datasets exist on already-installed hosts
+  # (disko declarations are not applied by regular `nixos-rebuild switch`).
+  systemd.services.k8nix-zfs-pv-datasets = {
+    description = "Ensure ZFS datasets for k3s PV mountpoints exist";
     after = [ "zfs-import-r630-main.service" "zfs-import-r630-bulk.service" ];
     requires = [ "zfs-import-r630-main.service" "zfs-import-r630-bulk.service" ];
+    before = [ "k3s.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    path = [ pkgs.zfs pkgs.coreutils ];
+    script = ''
+      set -eu
+
+      if ! zfs list -H -o name r630-main/k3s/pv >/dev/null 2>&1; then
+        zfs create -p \
+          -o mountpoint=/var/lib/zfs-pv/reliable \
+          -o canmount=on \
+          -o recordsize=16K \
+          r630-main/k3s/pv
+      fi
+
+      if ! zfs list -H -o name r630-bulk/k3s/pv >/dev/null 2>&1; then
+        zfs create -p \
+          -o mountpoint=/var/lib/zfs-pv/bulk \
+          -o canmount=on \
+          -o recordsize=1M \
+          r630-bulk/k3s/pv
+      fi
+
+      mkdir -p /var/lib/zfs-pv/reliable /var/lib/zfs-pv/bulk
+
+      if [ "$(zfs get -H -o value mounted r630-main/k3s/pv)" != "yes" ]; then
+        zfs mount r630-main/k3s/pv
+      fi
+
+      if [ "$(zfs get -H -o value mounted r630-bulk/k3s/pv)" != "yes" ]; then
+        zfs mount r630-bulk/k3s/pv
+      fi
+
+      mkdir -p /var/lib/zfs-pv/reliable/gitlab
+    '';
+  };
+
+  # Ensure the agent starts after storage pools are imported.
+  systemd.services.k3s = {
+    after = [
+      "zfs-import-r630-main.service"
+      "zfs-import-r630-bulk.service"
+      "k8nix-zfs-pv-datasets.service"
+    ];
+    requires = [
+      "zfs-import-r630-main.service"
+      "zfs-import-r630-bulk.service"
+      "k8nix-zfs-pv-datasets.service"
+    ];
   };
 
   # Useful scheduling labels for storage/heavy workloads.

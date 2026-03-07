@@ -25,6 +25,7 @@
   # ZFS pools used by OpenEBS LocalPV StorageClasses.
   boot.supportedFilesystems = [ "zfs" ];
   networking.hostId = "deadbeef";
+  networking.firewall.allowedTCPPorts = lib.mkAfter [ 80 443 ];
   # Match the intended LAN NIC by stable hardware MAC, not interface name.
   systemd.network.networks."10-lan".matchConfig = lib.mkForce {
     PermanentMACAddress = "b0:83:fe:e1:68:6a";

@@ -34,6 +34,12 @@
         minTime = "5m";
         maxTime = "30m";
       };
+      customDNS = {
+        customTTL = "1h";
+        mapping = {
+          "gitlab.razgulis.com" = "192.168.1.205";
+        };
+      };
     };
   };
 

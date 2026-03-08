@@ -37,12 +37,12 @@
       customDNS = {
         customTTL = "1h";
         mapping = {
-          "gitlab.local.me" = "192.168.1.205";
+          "gitlab.local" = "192.168.1.205";
         };
       };
     };
   };
 
   environment.etc."blocky/custom-block-list.txt".source =
-    ./blocky/custom-block-list.txt;
+    ./custom-block-list.txt;
 }

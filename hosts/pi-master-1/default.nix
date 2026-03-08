@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 {
   imports = [
-    ../../modules/blocky.nix
+    ../../modules/blocky
     ../../modules/k3s/argocd.nix
     ../../modules/k3s/openebs-zfs.nix
   ];

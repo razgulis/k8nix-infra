@@ -58,7 +58,7 @@
         pi-worker-1     = mkHost { hostName = "pi-worker-1";     roleModule = ./modules/k3s/agent.nix;  extraModules = piModules; };
         pi-worker-2     = mkHost { hostName = "pi-worker-2";     roleModule = ./modules/k3s/agent.nix;  extraModules = piModules; };
         pi-worker-3     = mkHost { hostName = "pi-worker-3";     roleModule = ./modules/k3s/agent.nix;  extraModules = piModules; };
-        pi-worker-4-hdd = mkHost { hostName = "pi-worker-4-hdd"; roleModule = ./modules/k3s/agent.nix;  extraModules = piModules; };
+        pi-worker-4     = mkHost { hostName = "pi-worker-4";     roleModule = ./modules/k3s/agent.nix;  extraModules = piModules; };
         r630-storage    = mkHost { hostName = "r630-storage";    roleModule = ./modules/k3s/agent.nix;  system = "x86_64-linux"; extraModules = r630Modules; };
       };
 

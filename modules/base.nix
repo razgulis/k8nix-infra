@@ -116,7 +116,7 @@
     ethtool
     tldr
     dig
-    rg
+    ripgrep
   ];
 
   # Shell Aliases

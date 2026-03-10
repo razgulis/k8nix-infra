@@ -115,6 +115,8 @@
     iproute2
     ethtool
     tldr
+    dig
+    rg
   ];
 
   # Shell Aliases

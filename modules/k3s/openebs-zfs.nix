@@ -31,6 +31,12 @@
           replicated:
             mayastor:
               enabled: false
+        zfs-localpv:
+          zfs:
+            # On NixOS, zfs is provided via /run/current-system/sw/bin.
+            # Without this, the chart falls back to `zfs` in PATH inside a
+            # chroot, which fails and reports zero storage capacity.
+            bin: /run/current-system/sw/bin/zfs
     ---
     apiVersion: storage.k8s.io/v1
     kind: StorageClass

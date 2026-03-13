@@ -111,20 +111,49 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        Restart = "on-failure";
+        RestartSec = "10s";
       };
       path = [ pkgs.kubectl pkgs.coreutils ];
       script = ''
+        set -eu
         export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
         for _ in $(seq 1 180); do
-          if kubectl get crd ipaddresspools.metallb.io >/dev/null 2>&1; then
+          if kubectl get crd ipaddresspools.metallb.io >/dev/null 2>&1 \
+            && kubectl get crd l2advertisements.metallb.io >/dev/null 2>&1; then
             break
           fi
           sleep 5
         done
 
         kubectl get crd ipaddresspools.metallb.io >/dev/null 2>&1
-        kubectl apply -f /etc/k3s/metallb-pool.yaml
+        kubectl get crd l2advertisements.metallb.io >/dev/null 2>&1
+
+        # Validation webhooks can lag behind CRD creation; wait for controller
+        # and webhook endpoints before creating IPAddressPool/L2Advertisement.
+        kubectl -n metallb-system rollout status deployment/metallb-controller --timeout=10m
+
+        for _ in $(seq 1 180); do
+          webhook_ips="$(kubectl -n metallb-system get endpoints metallb-webhook-service -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || true)"
+          if [ -n "$webhook_ips" ]; then
+            break
+          fi
+          sleep 2
+        done
+
+        webhook_ips="$(kubectl -n metallb-system get endpoints metallb-webhook-service -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || true)"
+        [ -n "$webhook_ips" ]
+
+        for _ in $(seq 1 30); do
+          if kubectl apply -f /etc/k3s/metallb-pool.yaml; then
+            exit 0
+          fi
+          sleep 5
+        done
+
+        echo "failed to apply /etc/k3s/metallb-pool.yaml after retries" >&2
+        exit 1
       '';
     };
   };

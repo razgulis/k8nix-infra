@@ -26,8 +26,9 @@ in
     tokenFile = if hasK3sTokenSecret then "/run/agenix/k3s-token" else "/etc/k3s/token";
 
     # Note: `--flannel-backend` is not a valid flag for `k3s agent` (it is a
-    # server-side setting). Default to empty so hosts can override cleanly.
-    extraFlags = lib.mkDefault "";
+    # server-side setting). Label agent nodes as workers by default; hosts can
+    # still override (for example, storage-specialized nodes).
+    extraFlags = lib.mkDefault "--node-label=k8nix.io/role=worker";
   };
 
   systemd.tmpfiles.rules = (lib.optionals (!hasK3sTokenSecret) [

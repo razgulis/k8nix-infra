@@ -37,7 +37,9 @@
       customDNS = {
         customTTL = "1h";
         mapping = {
-          "gitlab.k8nix" = "192.168.1.205";
+          "gitlab.k8nix" = "192.168.1.206";
+          "grafana.k8nix" = "192.168.1.206";
+          "prometheus.k8nix" = "192.168.1.206";
         };
       };
     };

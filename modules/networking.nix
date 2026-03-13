@@ -46,7 +46,10 @@ in
     # Kubernetes / k3s common ports
     allowedTCPPorts = [
       22      # ssh
+      80      # ingress HTTP
+      443     # ingress HTTPS
       6443    # kube-apiserver on server
+      7946    # MetalLB memberlist
       10250   # kubelet
       2379    # etcd (if using embedded etcd / server)
       2380
@@ -54,6 +57,7 @@ in
 
     allowedUDPPorts = [
       8472    # flannel VXLAN
+      7946    # MetalLB memberlist
       5353    # mDNS (hostname.local discovery)
     ];
 

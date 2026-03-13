@@ -3,6 +3,7 @@
   imports = [
     ../../modules/blocky
     ../../modules/k3s/argocd.nix
+    ../../modules/k3s/ingress.nix
     ../../modules/k3s/openebs-zfs.nix
   ];
 
@@ -17,6 +18,11 @@
       "https://github.com/razgulis/k8nix-apps*"
       "https://gitlab.gitlab.svc.cluster.local/*/*"
     ];
+  };
+
+  k8nix.ingress = {
+    enable = true;
+    loadBalancerIP = "192.168.1.206";
   };
 
   networking.nameservers = [ "127.0.0.1" ];

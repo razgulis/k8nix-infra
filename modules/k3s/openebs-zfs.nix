@@ -55,10 +55,47 @@
         values:
         - r630-storage
     ---
+    # Dedicated class for PostgreSQL/TimescaleDB/pgvector data.
+    # Keeps naming explicit while remaining backed by the reliable pool.
+    apiVersion: storage.k8s.io/v1
+    kind: StorageClass
+    metadata:
+      name: zfs-ai-postgres
+    provisioner: zfs.csi.openebs.io
+    allowVolumeExpansion: true
+    reclaimPolicy: Delete
+    volumeBindingMode: WaitForFirstConsumer
+    parameters:
+      poolname: "r630-main"
+      fstype: "zfs"
+    allowedTopologies:
+    - matchLabelExpressions:
+      - key: kubernetes.io/hostname
+        values:
+        - r630-storage
+    ---
     apiVersion: storage.k8s.io/v1
     kind: StorageClass
     metadata:
       name: zfs-bulk
+    provisioner: zfs.csi.openebs.io
+    allowVolumeExpansion: true
+    reclaimPolicy: Delete
+    volumeBindingMode: WaitForFirstConsumer
+    parameters:
+      poolname: "r630-bulk"
+      fstype: "zfs"
+    allowedTopologies:
+    - matchLabelExpressions:
+      - key: kubernetes.io/hostname
+        values:
+        - r630-storage
+    ---
+    # Dedicated class for object/document storage (MinIO) on the bulk pool.
+    apiVersion: storage.k8s.io/v1
+    kind: StorageClass
+    metadata:
+      name: zfs-ai-minio
     provisioner: zfs.csi.openebs.io
     allowVolumeExpansion: true
     reclaimPolicy: Delete

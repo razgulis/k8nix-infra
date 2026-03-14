@@ -217,14 +217,26 @@ Notes:
 - Host config is under `hosts/r630-storage/`.
 - Disk geometry is declarative in `hosts/r630-storage/disko.nix`.
 - It runs as a k3s agent with ZFS enabled and imports pools `r630-main` and `r630-bulk`.
+- It advertises labels for storage-oriented scheduling:
+  - `k8nix.io/role=storage`
+  - `k8nix.io/storage=true`
+  - `k8nix.io/ai-data=true`
+  - `workload=heavy`
 - `pi-master-1` applies OpenEBS and the following StorageClasses:
   - `zfs-reliable` -> `poolname: r630-main`
+  - `zfs-ai-postgres` -> `poolname: r630-main` (PostgreSQL/TimescaleDB/pgvector)
   - `zfs-bulk` -> `poolname: r630-bulk`
+  - `zfs-ai-minio` -> `poolname: r630-bulk` (MinIO object storage)
 - Build/evaluate this host with:
 
 ```bash
 nix build .#nixosConfigurations.r630-storage.config.system.build.toplevel
 ```
+
+### AI data stack repo split
+- Keep infra primitives (node labels, storage classes, cluster bootstrap) in this repo (`k8nix-infra`).
+- Define app workloads (PostgreSQL/TimescaleDB/pgvector and MinIO manifests/Helm values) in your Argo app repo (`k8nix-apps` or in-cluster GitLab app repo).
+- MCP service is intentionally deferred for now.
 
 ### Ensure ZFS PV datasets exist (day-2 on existing installs)
 On already-installed machines, `nixos-rebuild switch` will not create missing
